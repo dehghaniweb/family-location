@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>موقعیت خانواده</title>
+<meta name="theme-color" content="#0E4A36">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#FAF6EF;
+  --surface:#FFFFFF;
+  --border:#E7DFD2;
+  --ink:#16261F;
+  --muted:#6B7A70;
+  --brand:#0E4A36;
+  --brand-ink:#FFFFFF;
+  --accent:#D98F2B;
+  --danger:#B23B3B;
+  --danger-bg:#FBEAEA;
+  --radius-lg:26px;
+  --radius-md:16px;
+  --shadow:0 14px 34px -16px rgba(14,74,54,.28);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;color:var(--ink);background:var(--bg);
+  font-family:'Vazirmatn',Tahoma,Arial,sans-serif;
+  -webkit-tap-highlight-color:transparent;
+}
+button,input{font-family:inherit}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+.hidden{display:none !important}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* ---------- Login ---------- */
+.auth{
+  min-height:100dvh;display:flex;align-items:center;justify-content:center;
+  padding:max(24px,env(safe-area-inset-top)) 18px max(24px,env(safe-area-inset-bottom));
+  background:
+    radial-gradient(1100px 500px at 50% -10%, #12543e 0%, var(--brand) 55%, #0a3626 100%);
+}
+.auth-card{
+  width:100%;max-width:420px;background:var(--surface);border-radius:var(--radius-lg);
+  padding:30px 24px 26px;box-shadow:var(--shadow);
+}
+.auth-head{text-align:center;margin-bottom:22px}
+.auth-head h1{margin:0 0 6px;font-size:21px;font-weight:800;color:var(--brand)}
+.auth-head p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.8}
+
+.profiles{display:flex;gap:10px;justify-content:center}
+.profile-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;
+  background:none;border:1.5px solid var(--border);border-radius:18px;
+  padding:14px 6px 12px;cursor:pointer;transition:border-color .15s,transform .15s;
+}
+.profile-btn:hover,.profile-btn:active{border-color:var(--accent);transform:translateY(-2px)}
+.avatar{width:58px;height:58px;border-radius:50%}
+.profile-name{font-size:13.5px;font-weight:700}
+.profile-role{font-size:11px;color:var(--muted)}
+
+.login-form{display:flex;flex-direction:column;gap:14px;overflow:hidden;max-height:0;opacity:0;transition:max-height .35s ease,opacity .3s ease}
+.login-form.open{max-height:420px;opacity:1;margin-top:18px}
+.chosen{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:14px;padding:10px 14px}
+.chosen .avatar{width:44px;height:44px}
+.chosen-name{font-weight:700;font-size:14.5px}
+.chosen-role{font-size:11.5px;color:var(--muted)}
+.field label{display:block;font-size:12.5px;font-weight:700;margin-bottom:7px}
+.field input{
+  width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;
+  font-size:15px;background:var(--surface);color:var(--ink)
+}
+.field input:focus{border-color:var(--accent)}
+.btn-primary{
+  background:var(--brand);color:var(--brand-ink);border:0;border-radius:12px;
+  padding:13px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s
+}
+.btn-primary:disabled{opacity:.6}
+.btn-text{background:none;border:0;color:var(--muted);font-size:12.5px;cursor:pointer;padding:4px}
+.login-error{display:flex;gap:8px;align-items:center;background:var(--danger-bg);color:var(--danger);
+  border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.7}
+.auth-foot{margin-top:18px;font-size:11px;color:var(--muted);text-align:center;line-height:1.9}
+
+/* ---------- App ---------- */
+.app{min-height:100dvh;display:flex;flex-direction:column;background:var(--bg)}
+.bar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:max(14px,env(safe-area-inset-top)) 16px 12px;background:var(--brand);color:var(--brand-ink)
+}
+.bar-id{display:flex;align-items:center;gap:10px;min-width:0}
+.bar-avatar{width:36px;height:36px;border-radius:50%;flex:none}
+.bar-title{font-size:15px;font-weight:800;white-space:nowrap}
+.bar-sub{font-size:11.5px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{
+  background:rgba(255,255,255,.14);border:0;color:#fff;width:36px;height:36px;border-radius:50%;
+  font-size:16px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center
+}
+
+.banner{
+  display:flex;gap:10px;align-items:center;margin:10px 14px 0;padding:10px 13px;
+  border-radius:12px;font-size:12.5px;line-height:1.8
+}
+.banner.err{background:var(--danger-bg);color:var(--danger)}
+.banner.warn{background:#FFF4E0;color:#8A5A00}
+
+.strip{display:flex;gap:8px;overflow-x:auto;padding:12px 14px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.pill{
+  flex:none;display:flex;align-items:center;gap:9px;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:999px;padding:7px 14px 7px 7px;cursor:pointer
+}
+.pill.active{border-color:var(--c,var(--accent));box-shadow:0 0 0 1px var(--c,var(--accent)) inset}
+.pill-avatar{width:30px;height:30px;border-radius:50%;flex:none}
+.pill-text{display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.pill-name{font-size:12.5px;font-weight:700}
+.pill-meta{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:#B9C2BC;flex:none}
+.dot.online{background:#1C9B5B;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(28,155,91,.5)}50%{box-shadow:0 0 0 5px rgba(28,155,91,0)}}
+
+.map-wrap{flex:1;padding:0 14px max(14px,env(safe-area-inset-bottom));min-height:300px}
+.map{width:100%;height:100%;min-height:300px;border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow)}
+.leaflet-popup-content{font-family:'Vazirmatn',Tahoma,sans-serif;font-size:12.5px}
+
+@media(prefers-reduced-motion:reduce){.dot.online{animation:none}.login-form{transition:none}}
+</style>
+</head>
+<body>
+
+<!-- avatar symbol sprite (generic flat icons — not photos) -->
+<svg class="sr-only" aria-hidden="true">
+  <symbol id="avatar-ali" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="32" fill="#DFF1E8"/>
+    <path d="M22 17c5-4 15-4 20 0 1 5 0 9-3 11 4 3 7 8 8 14-5 4-25 4-30 0 1-6 4-11 8-14-3-2-4-6-3-11z" fill="#0E4A36"/>
+  </symbol>
+  <symbol id="avatar-sara" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="32" fill="#FBEAD2"/>
+    <path d="M17 29c0-10 7-17 15-17s15 7 15 17c0 4-1 7-3 9 2 11-4 10-4 4a13 13 0 01-16 0c0 6-6 7-4-4-2-2-3-5-3-9z" fill="#B5700E"/>
+    <path d="M15 56c0-9 8-15 17-15s17 6 17 15" fill="#B5700E"/>
+  </symbol>
+  <symbol id="avatar-arsha" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="32" fill="#DDEEF0"/>
+    <circle cx="32" cy="27" r="10" fill="#1C6E79"/>
+    <path d="M32 16c5 0 9 3 9 8H23c0-5 4-8 9-8z" fill="#1C6E79"/>
+    <path d="M18 54c0-8 6-13 14-13s14 5 14 13" fill="#1C6E79"/>
+  </symbol>
+</svg>
+
+<!-- ================= Login ================= -->
+<section id="login" class="auth">
+  <div class="auth-card">
+    <div class="auth-head">
+      <h1>موقعیت خانواده</h1>
+      <p>پروفایل خودتان را انتخاب کنید و وارد شوید</p>
+    </div>
+
+    <div class="profiles" id="profiles"></div>
+
+    <form id="login-form" class="login-form">
+      <div class="chosen" id="chosen"></div>
+      <div class="field">
+        <label for="pw">رمز عبور</label>
+        <input id="pw" type="password" autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn-primary" id="login-btn">ورود</button>
+      <button type="button" class="btn-text" id="back-btn">بازگشت به انتخاب پروفایل</button>
+      <div class="login-error hidden" id="login-error"></div>
+    </form>
+
+    <div class="auth-foot">فقط برای همین سه نفر؛ موقعیت شما تنها پس از ورود و تا وقتی این صفحه باز است، برای بقیه اعضا نمایش داده می‌شود.</div>
+  </div>
+</section>
+
+<!-- ================= App ================= -->
+<section id="app" class="app hidden">
+  <header class="bar">
+    <div class="bar-id">
+      <svg class="bar-avatar" viewBox="0 0 64 64" id="me-avatar"><use href="#avatar-ali"/></svg>
+      <div>
+        <div class="bar-title">موقعیت خانواده</div>
+        <div class="bar-sub" id="status-line" aria-live="polite">در حال اتصال…</div>
+      </div>
+    </div>
+    <button class="icon-btn" id="logout-btn" title="خروج" aria-label="خروج">⎋</button>
+  </header>
+
+  <div id="banner" class="banner hidden"></div>
+
+  <div class="strip" id="strip"></div>
+
+  <div class="map-wrap"><div id="map" class="map"></div></div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* =======================================================
+   تنظیمات — این دو خط را قبل از انتشار روی GitHub Pages
+   با مقادیر واقعی خودتان جایگزین کنید (راهنما در README.md)
+======================================================= */
+const CF_WORKER_URL   = 'YOUR_CLOUDFLARE_WORKER_URL';   // مثل: https://family-location.xxx.workers.dev
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_WEBAPP_URL';  // مثل: https://script.google.com/macros/s/xxxx/exec
+
+const SEND_INTERVAL_MS  = 25000;
+const FETCH_INTERVAL_MS = 15000;
+
+const PROFILES = [
+  { key:'ali',       name:'علی',       role:'پدر', symbol:'avatar-ali',   fg:'#0E4A36' },
+  { key:'sara',      name:'سارا',      role:'مادر', symbol:'avatar-sara',  fg:'#B5700E' },
+  { key:'amirarsha', name:'امیرآرشا',  role:'پسر', symbol:'avatar-arsha', fg:'#1C6E79' },
+];
+
+/* ---------------- helpers ---------------- */
+const $ = id => document.getElementById(id);
+const profileFor = key => PROFILES.find(p => p.key === key);
+function agoFa(ts){
+  if(!ts) return 'هنوز ارسال نشده';
+  const m = Math.floor(Math.max(0, Date.now()-ts)/60000);
+  if(m < 1) return 'اکنون';
+  if(m < 60) return m + ' دقیقه پیش';
+  const h = Math.floor(m/60);
+  if(h < 24) return h + ' ساعت پیش';
+  return Math.floor(h/24) + ' روز پیش';
+}
+function showBanner(text, kind){
+  const el = $('banner');
+  if(!text){ el.classList.add('hidden'); return; }
+  el.textContent = text; el.className = 'banner ' + kind;
+}
+
+/* ---------------- session / login ---------------- */
+let session = null;
+try{ session = JSON.parse(localStorage.getItem('fl_session') || 'null'); }catch{}
+
+let pickedKey = null;
+
+function renderProfiles(){
+  $('profiles').innerHTML = PROFILES.map(p => `
+    <button type="button" class="profile-btn" data-key="${p.key}">
+      <svg class="avatar" viewBox="0 0 64 64"><use href="#${p.symbol}"/></svg>
+      <span class="profile-name">${p.name}</span>
+      <span class="profile-role">${p.role}</span>
+    </button>`).join('');
+  document.querySelectorAll('.profile-btn').forEach(b => b.onclick = () => pickProfile(b.dataset.key));
+}
+
+function pickProfile(key){
+  pickedKey = key;
+  const p = profileFor(key);
+  $('chosen').innerHTML = `<svg class="avatar" viewBox="0 0 64 64"><use href="#${p.symbol}"/></svg>
+    <div><div class="chosen-name">${p.name}</div><div class="chosen-role">${p.role}</div></div>`;
+  $('profiles').classList.add('hidden');
+  $('login-form').classList.add('open');
+  $('login-error').classList.add('hidden');
+  $('pw').value = '';
+  setTimeout(() => $('pw').focus(), 150);
+}
+
+$('back-btn').onclick = () => {
+  $('login-form').classList.remove('open');
+  $('profiles').classList.remove('hidden');
+  pickedKey = null;
+};
+
+$('login-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const password = $('pw').value;
+  const btn = $('login-btn');
+  btn.disabled = true; btn.textContent = 'در حال بررسی…';
+  $('login-error').classList.add('hidden');
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'login', name: pickedKey, password })
+    });
+    const data = await res.json();
+    if(!data.ok){
+      $('login-error').textContent = data.error === 'wrong_password'
+        ? 'رمز عبور اشتباه است.' : 'ورود ممکن نشد. دوباره تلاش کنید.';
+      $('login-error').classList.remove('hidden');
+      btn.disabled = false; btn.textContent = 'ورود';
+      return;
+    }
+    session = { key: pickedKey, name: profileFor(pickedKey).name,
+                token: data.token, workerUrl: data.workerUrl || CF_WORKER_URL };
+    localStorage.setItem('fl_session', JSON.stringify(session));
+    enterApp();
+  }catch(err){
+    $('login-error').textContent = 'اتصال به سرور برقرار نشد. اینترنت گوشی را بررسی کنید.';
+    $('login-error').classList.remove('hidden');
+    btn.disabled = false; btn.textContent = 'ورود';
+  }
+};
+
+$('logout-btn').onclick = () => {
+  if(!confirm('از حساب خارج شوید؟')) return;
+  localStorage.removeItem('fl_session');
+  location.reload();
+};
+
+function enterApp(){
+  $('login').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  const p = profileFor(session.key);
+  $('me-avatar').innerHTML = `<use href="#${p.symbol}"/>`;
+  initMap();
+  startGeolocation();
+  load();
+  setInterval(load, FETCH_INTERVAL_MS);
+}
+
+/* ---------------- networking with Iran-filter fallback ---------------- */
+// اگه قبلاً روی همین گوشی فهمیدیم Cloudflare مستقیم در دسترس نیست، دیگه هر بار
+// ۷ ثانیه منتظرش نمی‌مونیم — فقط یه تست سریع (۱.۵ ثانیه) می‌زنیم، شاید فیلتر برداشته شده باشه.
+let cfOk = localStorage.getItem('fl_cf_ok') !== 'false';
+let usingBridge = false;
+
+function setCfOk(val){
+  cfOk = val;
+  localStorage.setItem('fl_cf_ok', val ? 'true' : 'false');
+}
+
+async function smartFetch(path, opts = {}){
+  try{
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), cfOk ? 7000 : 1500);
+    const res = await fetch((session.workerUrl || CF_WORKER_URL) + path, {
+      ...opts,
+      headers: { 'Content-Type':'application/json', Authorization:'Bearer ' + session.token, ...(opts.headers||{}) },
+      signal: ctrl.signal
+    });
+    clearTimeout(t);
+    if(!res.ok) throw new Error('http_' + res.status);
+    setCfOk(true); usingBridge = false;
+    return await res.json();
+  }catch(e){
+    setCfOk(false);
+    return viaBridge(path, opts);
+  }
+}
+
+async function viaBridge(path, opts = {}){
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({
+      action:'proxy', path, method: opts.method || 'GET',
+      body: opts.body ? JSON.parse(opts.body) : undefined
+    })
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  usingBridge = true;
+  return data;
+}
+
+// پیام فنی‌ای که سرور یا fetch برمی‌گردونه رو به یه توضیح قابل‌فهم تبدیل می‌کنه،
+// تا به‌جای «اینترنت رو بررسی کن» دقیقاً بدونیم مشکل کجاست.
+function explainError(msg){
+  if(msg === 'unauthorized') return 'توکن FAMILY_TOKEN در Cloudflare و Apps Script یکی نیست.';
+  if(msg === 'bridge_not_configured') return 'در Apps Script، مقدار CF_WORKER_URL یا FAMILY_TOKEN هنوز تنظیم نشده.';
+  if(msg === 'not_found') return 'این مسیر روی Worker پیدا نشد — احتمالاً نسخهٔ قدیمی worker.js دیپلوی شده.';
+  if(msg === 'server_error') return 'در خود Apps Script خطا رخ داد.';
+  return 'اتصال از هیچ‌کدام از دو مسیر (Cloudflare و Apps Script) ممکن نشد.';
+}
+
+/* ---------------- map ---------------- */
+let map, markers = {}, routeLine = null, selectedKey = null, lastMembers = [];
+
+function initMap(){
+  map = L.map('map', { zoomControl:true }).setView([35.7, 51.4], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom:19, attribution:'&copy; OpenStreetMap'
+  }).addTo(map);
+}
+
+function markerIcon(p){
+  const html = `<div style="width:30px;height:30px;border-radius:50%;background:#fff;
+    box-shadow:0 2px 8px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;
+    border:2px solid ${p.fg}"><svg width="20" height="20" viewBox="0 0 64 64"><use href="#${p.symbol}"/></svg></div>`;
+  return L.divIcon({ html, className:'', iconSize:[30,30] });
+}
+
+function renderMarkers(members){
+  const seen = new Set();
+  members.forEach(m => {
+    if(m.lat == null) return;
+    seen.add(m.id);
+    const p = profileFor(m.id) || { fg:'#888', symbol:null };
+    if(markers[m.id]) markers[m.id].setLatLng([m.lat, m.lng]);
+    else markers[m.id] = L.marker([m.lat, m.lng], { icon: markerIcon(p) }).addTo(map).bindTooltip(m.name);
+  });
+  Object.keys(markers).forEach(id => { if(!seen.has(id)){ map.removeLayer(markers[id]); delete markers[id]; } });
+}
+
+async function focusMember(m){
+  if(!m || m.lat == null) return;
+  map.setView([m.lat, m.lng], Math.max(map.getZoom(), 14));
+  try{
+    const data = await smartFetch('/route?id=' + encodeURIComponent(m.id));
+    const pts = (data.route || []).map(pt => [pt.lat, pt.lng]);
+    if(routeLine) map.removeLayer(routeLine);
+    if(pts.length > 1){
+      const p = profileFor(m.id);
+      routeLine = L.polyline(pts, { color: p ? p.fg : '#888', weight:3, opacity:.55 }).addTo(map);
+    }
+  }catch(e){ /* route is a nice-to-have; ignore failures */ }
+}
+
+function renderStrip(members){
+  const byKey = {}; members.forEach(m => byKey[m.id] = m);
+  $('strip').innerHTML = PROFILES.map(p => {
+    const m = byKey[p.key];
+    const online = !!(m && m.online);
+    return `<button type="button" class="pill ${selectedKey===p.key?'active':''}" data-key="${p.key}" style="--c:${p.fg}">
+      <svg class="pill-avatar" viewBox="0 0 64 64"><use href="#${p.symbol}"/></svg>
+      <span class="pill-text">
+        <span class="pill-name">${p.name}</span>
+        <span class="pill-meta"><i class="dot ${online?'online':''}"></i>${agoFa(m && m.updatedAt)}</span>
+      </span>
+    </button>`;
+  }).join('');
+  document.querySelectorAll('.pill').forEach(b => b.onclick = () => {
+    selectedKey = b.dataset.key;
+    renderStrip(members);
+    if(byKey[selectedKey]) focusMember(byKey[selectedKey]);
+  });
+}
+
+async function load(){
+  try{
+    const data = await smartFetch('/family');
+    lastMembers = data.members || [];
+    renderStrip(lastMembers);
+    renderMarkers(lastMembers);
+
+    const base = usingBridge ? 'اتصال از طریق مسیر جایگزین (Google) برقرار است' : 'متصل';
+    $('status-line').textContent = base + ' · بروزرسانی: ' + agoFa(data.generatedAt).replace('اکنون','همین حالا');
+    showBanner(usingBridge ? 'به نظر می‌رسد دسترسی مستقیم محدود شده؛ از مسیر جایگزین استفاده می‌شود.' : '', usingBridge ? 'warn' : '');
+
+    if(!selectedKey && lastMembers.length){
+      const freshest = lastMembers.filter(m=>m.lat!=null).sort((a,b)=>b.updatedAt-a.updatedAt)[0];
+      if(freshest){ selectedKey = freshest.id; renderStrip(lastMembers); focusMember(freshest); }
+    }
+  }catch(e){
+    $('status-line').textContent = 'ارتباط برقرار نشد';
+    showBanner(explainError(e.message), 'err');
+  }
+}
+
+/* ---------------- geolocation ---------------- */
+let watchId = null, lastSent = 0;
+
+function startGeolocation(){
+  if(!('geolocation' in navigator)){
+    showBanner('این مرورگر از موقعیت‌یابی پشتیبانی نمی‌کند.', 'err');
+    return;
+  }
+  if(watchId !== null) return;
+  watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, {
+    enableHighAccuracy:true, maximumAge:15000, timeout:20000
+  });
+}
+
+function onPosition(pos){
+  const now = Date.now();
+  if(now - lastSent >= SEND_INTERVAL_MS){
+    lastSent = now;
+    const { latitude, longitude, accuracy } = pos.coords;
+    smartFetch('/location', {
+      method:'POST',
+      body: JSON.stringify({ id:session.key, name:session.name, lat:latitude, lng:longitude, accuracy, t:Date.now() })
+    }).catch(()=>{});
+  }
+}
+
+function onPositionError(err){
+  if(err.code === err.PERMISSION_DENIED){
+    showBanner('دسترسی به موقعیت مکانی رد شده است. از تنظیمات گوشی، مجوز Location این برنامه را روی «همیشه مجاز» بگذارید.', 'err');
+  }
+}
+
+/* ---------------- boot ---------------- */
+renderProfiles();
+if(session && session.token){ enterApp(); }
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
