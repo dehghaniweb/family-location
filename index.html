@@ -207,8 +207,8 @@ button,input{font-family:inherit}
    تنظیمات — این دو خط را قبل از انتشار روی GitHub Pages
    با مقادیر واقعی خودتان جایگزین کنید (راهنما در README.md)
 ======================================================= */
-const CF_WORKER_URL   = 'https://family-location-worker.dehghaniweb.workers.dev/';   // مثل: https://family-location.xxx.workers.dev
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5pfUVdkUZ31l67AD37hmwI46Q2TgVBPwhLC0sikXuw3Z19slKH0Xk9MS2xJOWmopb2Q/exec';  // مثل: https://script.google.com/macros/s/xxxx/exec
+const CF_WORKER_URL   = 'YOUR_CLOUDFLARE_WORKER_URL';   // مثل: https://family-location.xxx.workers.dev
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_WEBAPP_URL';  // مثل: https://script.google.com/macros/s/xxxx/exec
 
 const SEND_INTERVAL_MS  = 25000;
 const FETCH_INTERVAL_MS = 15000;
@@ -320,24 +320,33 @@ function enterApp(){
 }
 
 /* ---------------- networking with Iran-filter fallback ---------------- */
-let cfOk = true;
+// اگه قبلاً روی همین گوشی فهمیدیم Cloudflare مستقیم در دسترس نیست، دیگه هر بار
+// ۷ ثانیه منتظرش نمی‌مونیم — فقط یه تست سریع (۱.۵ ثانیه) می‌زنیم، شاید فیلتر برداشته شده باشه.
+let cfOk = localStorage.getItem('fl_cf_ok') !== 'false';
 let usingBridge = false;
+
+function setCfOk(val){
+  cfOk = val;
+  localStorage.setItem('fl_cf_ok', val ? 'true' : 'false');
+}
+
+function normUrl(u){ return String(u || '').trim().replace(/\/+$/, ''); }
 
 async function smartFetch(path, opts = {}){
   try{
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), cfOk ? 7000 : 2500);
-    const res = await fetch((session.workerUrl || CF_WORKER_URL) + path, {
+    const t = setTimeout(() => ctrl.abort(), cfOk ? 7000 : 1500);
+    const res = await fetch(normUrl(session.workerUrl || CF_WORKER_URL) + path, {
       ...opts,
       headers: { 'Content-Type':'application/json', Authorization:'Bearer ' + session.token, ...(opts.headers||{}) },
       signal: ctrl.signal
     });
     clearTimeout(t);
     if(!res.ok) throw new Error('http_' + res.status);
-    cfOk = true; usingBridge = false;
+    setCfOk(true); usingBridge = false;
     return await res.json();
   }catch(e){
-    cfOk = false;
+    setCfOk(false);
     return viaBridge(path, opts);
   }
 }
@@ -355,6 +364,16 @@ async function viaBridge(path, opts = {}){
   if(data.error) throw new Error(data.error);
   usingBridge = true;
   return data;
+}
+
+// پیام فنی‌ای که سرور یا fetch برمی‌گردونه رو به یه توضیح قابل‌فهم تبدیل می‌کنه،
+// تا به‌جای «اینترنت رو بررسی کن» دقیقاً بدونیم مشکل کجاست.
+function explainError(msg){
+  if(msg === 'unauthorized') return 'توکن FAMILY_TOKEN در Cloudflare و Apps Script یکی نیست.';
+  if(msg === 'bridge_not_configured') return 'در Apps Script، مقدار CF_WORKER_URL یا FAMILY_TOKEN هنوز تنظیم نشده.';
+  if(msg === 'not_found') return 'این مسیر روی Worker پیدا نشد — احتمالاً نسخهٔ قدیمی worker.js دیپلوی شده.';
+  if(msg === 'server_error') return 'در خود Apps Script خطا رخ داد.';
+  return 'اتصال از هیچ‌کدام از دو مسیر (Cloudflare و Apps Script) ممکن نشد.';
 }
 
 /* ---------------- map ---------------- */
@@ -437,7 +456,7 @@ async function load(){
     }
   }catch(e){
     $('status-line').textContent = 'ارتباط برقرار نشد';
-    showBanner('اتصال به سرور ممکن نشد. اینترنت گوشی را بررسی کنید.', 'err');
+    showBanner(explainError(e.message), 'err');
   }
 }
 
