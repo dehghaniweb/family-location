@@ -278,11 +278,8 @@ $('login-form').onsubmit = async (e) => {
   btn.disabled = true; btn.textContent = 'در حال بررسی…';
   $('login-error').classList.add('hidden');
   try{
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'login', name: pickedKey, password })
-    });
+    const qs = new URLSearchParams({ action:'login', name: pickedKey, password });
+    const res = await fetch(APPS_SCRIPT_URL + '?' + qs.toString());
     const data = await res.json();
     if(!data.ok){
       $('login-error').textContent = data.error === 'wrong_password'
@@ -296,7 +293,7 @@ $('login-form').onsubmit = async (e) => {
     localStorage.setItem('fl_session', JSON.stringify(session));
     enterApp();
   }catch(err){
-    $('login-error').textContent = 'اتصال به سرور برقرار نشد. اینترنت گوشی را بررسی کنید.';
+    $('login-error').textContent = 'اتصال به سرور برقرار نشد: ' + (err && err.message ? err.message : 'خطای نامشخص');
     $('login-error').classList.remove('hidden');
     btn.disabled = false; btn.textContent = 'ورود';
   }
@@ -352,14 +349,9 @@ async function smartFetch(path, opts = {}){
 }
 
 async function viaBridge(path, opts = {}){
-  const res = await fetch(APPS_SCRIPT_URL, {
-    method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({
-      action:'proxy', path, method: opts.method || 'GET',
-      body: opts.body ? JSON.parse(opts.body) : undefined
-    })
-  });
+  const qs = new URLSearchParams({ action:'proxy', path, method: opts.method || 'GET' });
+  if(opts.body) qs.set('body', opts.body); // opts.body از قبل یک رشتهٔ JSON است
+  const res = await fetch(APPS_SCRIPT_URL + '?' + qs.toString());
   const data = await res.json();
   if(data.error) throw new Error(data.error);
   usingBridge = true;
