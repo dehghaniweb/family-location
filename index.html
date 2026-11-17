@@ -280,7 +280,10 @@ $('login-form').onsubmit = async (e) => {
   try{
     const qs = new URLSearchParams({ action:'login', name: pickedKey, password });
     const res = await fetch(APPS_SCRIPT_URL + '?' + qs.toString());
-    const data = await res.json();
+    const raw = await res.text();
+    let data;
+    try{ data = JSON.parse(raw); }
+    catch{ throw new Error('پاسخ غیرمنتظره (نه JSON): ' + raw.slice(0, 140)); }
     if(!data.ok){
       $('login-error').textContent = data.error === 'wrong_password'
         ? 'رمز عبور اشتباه است.' : 'ورود ممکن نشد. دوباره تلاش کنید.';
@@ -352,7 +355,10 @@ async function viaBridge(path, opts = {}){
   const qs = new URLSearchParams({ action:'proxy', path, method: opts.method || 'GET' });
   if(opts.body) qs.set('body', opts.body); // opts.body از قبل یک رشتهٔ JSON است
   const res = await fetch(APPS_SCRIPT_URL + '?' + qs.toString());
-  const data = await res.json();
+  const raw = await res.text();
+  let data;
+  try{ data = JSON.parse(raw); }
+  catch{ throw new Error('پاسخ غیرمنتظره (نه JSON): ' + raw.slice(0, 140)); }
   if(data.error) throw new Error(data.error);
   usingBridge = true;
   return data;
