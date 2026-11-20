@@ -207,8 +207,16 @@ button,input{font-family:inherit}
    تنظیمات — این دو خط را قبل از انتشار روی GitHub Pages
    با مقادیر واقعی خودتان جایگزین کنید (راهنما در README.md)
 ======================================================= */
-const CF_WORKER_URL   = 'YOUR_CLOUDFLARE_WORKER_URL';   // مثل: https://family-location.xxx.workers.dev
-const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_WEBAPP_URL';  // مثل: https://script.google.com/macros/s/xxxx/exec
+const CF_WORKER_URL   = 'https://family-location-worker.dehghaniweb.workers.dev';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5pfUVdkUZ31l67AD37hmwI46Q2TgVBPwhLC0sikXuw3Z19slKH0Xk9MS2xJOWmopb2Q/exec';
+
+// اگه این دو خط بالا جایگزین نشده باشن (یا با https:// شروع نشن)، fetch اون‌ها رو
+// به‌عنوان یه مسیر داخل همین سایت گیت‌هاب حساب می‌کنه و یه صفحهٔ 404 برمی‌گردونه —
+// همون چیزی که باعث خطای عجیبِ «پاسخ غیرمنتظره» می‌شد. این‌جا زودتر و واضح‌تر می‌گیم.
+const CONFIG_ERROR =
+  (!/^https:\/\//.test(APPS_SCRIPT_URL)) ? 'آدرس APPS_SCRIPT_URL در index.html هنوز با آدرس واقعی جایگزین نشده (گام ۴ راهنما).' :
+  (!/^https:\/\//.test(CF_WORKER_URL))   ? 'آدرس CF_WORKER_URL در index.html هنوز با آدرس واقعی جایگزین نشده (گام ۴ راهنما).' :
+  null;
 
 const SEND_INTERVAL_MS  = 25000;
 const FETCH_INTERVAL_MS = 15000;
@@ -275,8 +283,13 @@ $('login-form').onsubmit = async (e) => {
   e.preventDefault();
   const password = $('pw').value;
   const btn = $('login-btn');
-  btn.disabled = true; btn.textContent = 'در حال بررسی…';
   $('login-error').classList.add('hidden');
+  if(CONFIG_ERROR){
+    $('login-error').textContent = CONFIG_ERROR;
+    $('login-error').classList.remove('hidden');
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'در حال بررسی…';
   try{
     const qs = new URLSearchParams({ action:'login', name: pickedKey, password });
     const res = await fetch(APPS_SCRIPT_URL + '?' + qs.toString());
